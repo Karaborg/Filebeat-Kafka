@@ -1,0 +1,34 @@
+
+
+filebeat.inputs:
+
+  # FSM
+- type: log
+  scan_frequency: 10s
+  ignore_older: 30m
+  paths:
+    - /etc/filebeat/log.log
+  fields:
+    log_topic: test
+
+processors:
+  - include_fields:
+     fields: ["message", "fields.log_topic"]
+
+output.kafka:
+# initial brokers for reading cluster metadata
+  hosts: ["broker:9092"]
+# message topic selection + partitioning
+  topic: '%{[fields.log_topic]}'
+  codec.json:
+    pretty: false
+  required_acks: 1
+  compression: snappy
+  max_message_bytes: 1000000
+  
+  filebeat.config.modules:
+    path: '${path.home}/modules.d/*.yml'
+    reload.enabled: true
+    module: kafka
+  
+  logging.level: info
